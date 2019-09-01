@@ -1,0 +1,16 @@
+[package]
+name = "vulkan-device-filter-layer"
+version = "0.1.0"
+authors = ["Matt Coffin <mcoffin13@gmail.com>"]
+edition = "2018"
+
+[lib]
+crate_type = ["dylib"]
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+ash = "0.29"
+
+[dependencies.vulkan-sys]
+path = "../vulkan-sys"

@@ -1,0 +1,20 @@
+{
+    "file_format_version": "1.0.0",
+    "layer": {
+        "name": "VK_LAYER_MCOF_device_filter",
+        "type": "GLOBAL",
+        "api_version": "1.2.121",
+        "implementation_version": "1",
+        "description": "Device filtering layer",
+        "functions": {
+            "vkGetInstanceProcAddr": "DeviceFilterLayer_GetInstanceProcAddr",
+            "vkGetDeviceProcAddr": "DeviceChooserLayer_GetDeviceProcAddr"
+        },
+        "enable_environment": {
+            "VK_DEVICE_FILTER_ENABLE": "1"
+        },
+        "disable_environment": {
+            "VK_DEVICE_FILTER_DISABLE": "1"
+        }
+    }
+}
