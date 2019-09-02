@@ -3,6 +3,7 @@
     "layer": {
         "name": "VK_LAYER_MCOF_device_filter",
         "type": "GLOBAL",
+        "library_path": "./libVkLayer_device_filter.so",
         "api_version": "1.2.121",
         "implementation_version": "1",
         "description": "Device filtering layer",

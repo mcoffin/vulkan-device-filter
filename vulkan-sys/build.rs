@@ -12,6 +12,7 @@ fn main() {
         .header("wrapper.h")
         .whitelist_type("PFN.+")
         .whitelist_type("VkLayerInstanceCreateInfo")
+        .whitelist_type("VkLayerDeviceCreateInfo")
         .generate()
         .expect("Error generating libobs bindings");
 

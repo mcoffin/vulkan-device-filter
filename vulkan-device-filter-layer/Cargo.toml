@@ -11,6 +11,7 @@ crate_type = ["dylib"]
 
 [dependencies]
 ash = "0.29"
+libc = "*"
 
 [dependencies.vulkan-sys]
 path = "../vulkan-sys"
