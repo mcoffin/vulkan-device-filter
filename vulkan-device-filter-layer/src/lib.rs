@@ -10,7 +10,6 @@ mod layer;
 use std::{
     env,
     ffi,
-    fmt,
     iter,
     mem,
     ptr,
@@ -84,18 +83,6 @@ impl PhysicalDeviceGroupPropertiesExt for vulkan_sys::VkPhysicalDeviceGroupPrope
     }
 }
 
-struct DisplayablePhysicalDeviceProperties(vulkan_sys::VkPhysicalDeviceProperties);
-
-impl fmt::Debug for DisplayablePhysicalDeviceProperties {
-    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
-        write!(f, "VkPhysicalDeviceProperties {{ ")?;
-        write!(f, "vendorID: {}, ", self.0.vendorID)?;
-        write!(f, "deviceID: {}, ", self.0.deviceID)?;
-        write!(f, "deviceName: {} }}", self.0.get_name().to_str().unwrap())?;
-        Ok(())
-    }
-}
-
 #[inline(always)]
 fn is_success_or_incomplete(v: vulkan_sys::VkResult) -> bool {
     v == vulkan_sys::VkResult_VK_SUCCESS || v == vulkan_sys::VkResult_VK_INCOMPLETE
@@ -145,14 +132,12 @@ pub unsafe extern "C" fn enumerate_physical_device_groups(
         slice::from_raw_parts_mut(physical_device_groups, *physical_device_group_count as usize)
     };
     if let Some(filter) = get_filter() {
-        println!("DeviceFilterLayer: EnumeratePhysicalDeviceGroups: inside filter");
         let group_matches = |group: &vulkan_sys::VkPhysicalDeviceGroupProperties| {
             let filtered_count = group.physical_devices()
                 .iter()
                 .map(|&d| dispatch.physical_device_properties(d))
                 .filter(|p| p.get_name().to_str().as_ref().map(|s| filter.is_match(s)).unwrap_or(false))
                 .map(|p| {
-                    println!("matched device in group: {}", p.get_name().to_str().unwrap());
                     p
                 })
                 .count();
@@ -210,13 +195,12 @@ pub unsafe extern "C" fn enumerate_physical_devices(
 
     let filter = get_filter();
     if let Some(filter) = filter {
-        println!("DeviceFilterLayer: EnumeratePhysicalDevices: filter = {:?}", &filter);
         let filtered_devices: LinkedList<vulkan_sys::VkPhysicalDevice> = devices.iter()
             .map(|&device| (device, dispatch.physical_device_properties(device)))
-            .filter(|&(_device, ref properties)| properties.get_name().to_str().as_ref().map(|s| filter.is_match(s)).unwrap_or(false))
-            .map(|(device, properties)| {
-                println!("DeviceFilterLayer: EnumeratePhysicalDevices: Matched Device Properties:\n{:?}", DisplayablePhysicalDeviceProperties(properties));
-                device
+            .filter_map(|(device, ref properties)| if properties.get_name().to_str().as_ref().map(|s| filter.is_match(s)).unwrap_or(false) {
+                Some(device)
+            } else {
+                None
             })
             .collect();
         let mut filtered_count = 0;
