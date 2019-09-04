@@ -474,73 +474,66 @@ pub unsafe extern "C" fn DeviceFilterLayer_GetDeviceProcAddr(device: vulkan_sys:
     ret
 }
 
+mod lookup {
+    use std::collections::BTreeMap;
+    use std::sync::Once;
+    use std::mem;
+    use super::*;
+
+    static mut INSTANCE_LOOKUP: Option<BTreeMap<&'static str, vulkan_sys::PFN_vkVoidFunction>> = None;
+
+    static INIT: Once = Once::new();
+
+    pub fn instance() -> &'static BTreeMap<&'static str, vulkan_sys::PFN_vkVoidFunction> {
+        unsafe {
+            INIT.call_once(|| {
+                let mut i_map = BTreeMap::new();
+                let f: vulkan_sys::PFN_vkGetInstanceProcAddr = Some(DeviceFilterLayer_GetInstanceProcAddr);
+                i_map.insert("vkGetInstanceProcAddr", mem::transmute(f));
+                let f: vulkan_sys::PFN_vkEnumerateInstanceLayerProperties = Some(enumerate_instance_layer_properties);
+                i_map.insert("vkEnumerateInstanceLayerProperties", mem::transmute(f));
+                let f: vulkan_sys::PFN_vkEnumerateInstanceExtensionProperties = Some(enumerate_instance_extension_properties);
+                i_map.insert("vkEnumerateInstanceExtensionProperties", mem::transmute(f));
+                let f: vulkan_sys::PFN_vkCreateInstance = Some(create_instance);
+                i_map.insert("vkCreateInstance", mem::transmute(f));
+                let f: vulkan_sys::PFN_vkDestroyInstance = Some(destroy_instance);
+                i_map.insert("vkDestroyInstance", mem::transmute(f));
+                let f: vulkan_sys::PFN_vkGetDeviceProcAddr = Some(DeviceFilterLayer_GetDeviceProcAddr);
+                i_map.insert("vkGetDeviceProcAddr", mem::transmute(f));
+                let f: vulkan_sys::PFN_vkEnumerateDeviceLayerProperties = Some(enumerate_device_layer_properties);
+                i_map.insert("vkEnumerateDeviceLayerProperties", mem::transmute(f));
+                let f: vulkan_sys::PFN_vkEnumerateDeviceExtensionProperties = Some(enumerate_device_extension_properties);
+                i_map.insert("vkEnumerateDeviceExtensionProperties", mem::transmute(f));
+                let f: vulkan_sys::PFN_vkEnumeratePhysicalDevices = Some(enumerate_physical_devices);
+                i_map.insert("vkEnumeratePhysicalDevices", mem::transmute(f));
+                let f: vulkan_sys::PFN_vkEnumeratePhysicalDeviceGroups = Some(enumerate_physical_device_groups);
+                ["vkEnumeratePhysicalDeviceGroups", "vkEnumeratePhysicalDeviceGroupsKHR"].into_iter().for_each(|k| {
+                    i_map.insert(k, mem::transmute(f));
+                });
+                let f: vulkan_sys::PFN_vkCreateDevice = Some(create_device);
+                i_map.insert("vkCreateDevice", mem::transmute(f));
+                let f: vulkan_sys::PFN_vkDestroyDevice = Some(destroy_device);
+                i_map.insert("vkDestroyDevice", mem::transmute(f));
+
+                INSTANCE_LOOKUP = Some(i_map);
+            });
+            INSTANCE_LOOKUP.as_ref().unwrap()
+        }
+    }
+}
+
 #[no_mangle]
 pub unsafe extern "C" fn DeviceFilterLayer_GetInstanceProcAddr(instance: vk::Instance, name: *const std::os::raw::c_char) -> vulkan_sys::PFN_vkVoidFunction {
     let n = ffi::CStr::from_ptr(name).to_str().unwrap();
-    //println!("DeviceFilterLayer: GetInstanceProcAddr: {}", n);
-    let ret = match n {
-        // Instance functions
-        "vkGetInstanceProcAddr" => {
-            let pfn_get_instance_proc_addr: vulkan_sys::PFN_vkGetInstanceProcAddr = Some(DeviceFilterLayer_GetInstanceProcAddr);
-            mem::transmute(pfn_get_instance_proc_addr)
-        },
-        "vkEnumerateInstanceLayerProperties" => {
-            let pfn_eilp: vulkan_sys::PFN_vkEnumerateInstanceLayerProperties = Some(enumerate_instance_layer_properties);
-            mem::transmute(pfn_eilp)
-        },
-        "vkEnumerateInstanceExtensionProperties" => {
-            let pfn_eiep: vulkan_sys::PFN_vkEnumerateInstanceExtensionProperties = Some(enumerate_instance_extension_properties);
-            mem::transmute(pfn_eiep)
-        },
-        "vkCreateInstance" => {
-            let pfn_create_instance: vulkan_sys::PFN_vkCreateInstance = Some(create_instance);
-            mem::transmute(pfn_create_instance)
-        },
-        "vkDestroyInstance" => {
-            let pfn_destroy_instance: vulkan_sys::PFN_vkDestroyInstance = Some(destroy_instance);
-            mem::transmute(pfn_destroy_instance)
-        },
-        // Device functions
-        "vkGetDeviceProcAddr" => {
-            let pfn_get_device_proc_addr: vulkan_sys::PFN_vkGetDeviceProcAddr = Some(DeviceFilterLayer_GetDeviceProcAddr);
-            mem::transmute(pfn_get_device_proc_addr)
-        },
-        "vkEnumerateDeviceLayerProperties" => {
-            let p: vulkan_sys::PFN_vkEnumerateDeviceLayerProperties = Some(enumerate_device_layer_properties);
-            mem::transmute(p)
-        },
-        "vkEnumerateDeviceExtensionProperties" => {
-            let p: vulkan_sys::PFN_vkEnumerateDeviceExtensionProperties = Some(enumerate_device_extension_properties);
-            mem::transmute(p)
-        },
-        "vkEnumeratePhysicalDevices" => {
-            let p: vulkan_sys::PFN_vkEnumeratePhysicalDevices = Some(enumerate_physical_devices);
-            mem::transmute(p)
-        },
-        "vkEnumeratePhysicalDeviceGroups" | "vkEnumeratePhysicalDeviceGroupsKHR" => {
-            let p: vulkan_sys::PFN_vkEnumeratePhysicalDeviceGroups = Some(enumerate_physical_device_groups);
-            mem::transmute(p)
-        },
-        "vkCreateDevice" => {
-            let p: vulkan_sys::PFN_vkCreateDevice = Some(create_device);
-            mem::transmute(p)
-        },
-        "vkDestroyDevice" => {
-            let p: vulkan_sys::PFN_vkDestroyDevice = Some(destroy_device);
-            mem::transmute(p)
-        },
-        _ => {
+    lookup::instance()
+        .get(&n)
+        .map(|&p| p)
+        .unwrap_or_else(|| {
             let dispatches = dispatches::instances().read().unwrap();
-            let dispatch = dispatches.get(&instance.vulkan_handle_key()).unwrap();
-            dispatch.get_instance_proc_addr(instance, name)
-        }
-    };
-    // if let Some(v) = ret.as_ref() {
-    //     println!("    -> {:#x}", *v as usize);
-    // } else {
-    //     println!("    -> NULL");
-    // }
-    ret
+            dispatches
+                .get(&instance.vulkan_handle_key())
+                .and_then(|d| d.get_instance_proc_addr(instance, name))
+        })
 }
 
 trait VulkanHandle {
