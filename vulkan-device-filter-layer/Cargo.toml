@@ -10,7 +10,6 @@ crate_type = ["dylib"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-ash = "0.29"
 libc = "*"
 regex = "1.3"
 

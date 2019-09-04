@@ -1,4 +1,3 @@
-pub extern crate ash;
 pub extern crate vulkan_sys;
 extern crate libc;
 extern crate regex;
@@ -170,7 +169,7 @@ pub unsafe extern "C" fn enumerate_physical_devices(
         mem::drop(dispatches);
         dispatch.unwrap()
     };
-    let status = dispatch.enumerate_physical_devices(instance, physical_device_count, physical_devices);
+    let mut status = dispatch.enumerate_physical_devices(instance, physical_device_count, physical_devices);
     if !is_success_or_incomplete(status) {
         return status;
     }
@@ -184,7 +183,7 @@ pub unsafe extern "C" fn enumerate_physical_devices(
         buffer = iter::repeat(mem::zeroed())
             .take(*physical_device_count as usize)
             .collect();
-        let status = dispatch.enumerate_physical_devices(instance, physical_device_count, buffer.as_mut_slice().as_mut_ptr());
+        status = dispatch.enumerate_physical_devices(instance, physical_device_count, buffer.as_mut_slice().as_mut_ptr());
         if !is_success_or_incomplete(status) {
             return status;
         }
@@ -193,8 +192,7 @@ pub unsafe extern "C" fn enumerate_physical_devices(
         slice::from_raw_parts_mut(physical_devices, *physical_device_count as usize)
     };
 
-    let filter = get_filter();
-    if let Some(filter) = filter {
+    if let Some(filter) = get_filter() {
         let filtered_devices: LinkedList<vulkan_sys::VkPhysicalDevice> = devices.iter()
             .map(|&device| (device, dispatch.physical_device_properties(device)))
             .filter_map(|(device, ref properties)| if properties.get_name().to_str().as_ref().map(|s| filter.is_match(s)).unwrap_or(false) {
@@ -289,7 +287,6 @@ pub unsafe extern "C" fn destroy_instance(
     instance: vk::Instance,
     allocation_callbacks: *const vk::AllocationCallbacks
 ) {
-    //println!("DeviceFilterLayer: DestroyInstance");
     let mut dispatches = dispatches::instances().write().unwrap();
     if let Some(dispatch) = dispatches.get(&mem::transmute(instance)) {
         dispatch.destroy_instance(instance, allocation_callbacks.as_ref());
@@ -302,7 +299,6 @@ pub unsafe extern "C" fn destroy_device(
     device: vulkan_sys::VkDevice,
     allocation_callbacks: *const vk::AllocationCallbacks
 ) {
-    //println!("DeviceFilterLayer: DestroyDevice");
     let mut dispatches = dispatches::devices().write().unwrap();
     if let Some(dispatch) = dispatches.get(&mem::transmute(device)) {
         dispatch.destroy_device(device, allocation_callbacks.as_ref());
@@ -318,13 +314,6 @@ pub unsafe extern "C" fn create_device(
     device: *mut vulkan_sys::VkDevice
 ) -> vk::Result {
     use layer::DeviceDispatchTable;
-
-    // println!("DeviceFilterLayer: CreateDevice");
-    // if device.is_null() {
-    //     println!("DeviceFilterLayer: CreateDevice: device = null");
-    // } else {
-    //     println!("DeviceFilterLayer: CreateDevice: device = ({:?}, {})", *device, (*device).vulkan_handle_key());
-    // }
 
     let create_info = create_info.as_ref().unwrap();
     let next: &mut vk::VkStructHead = mem::transmute(create_info.pNext);
