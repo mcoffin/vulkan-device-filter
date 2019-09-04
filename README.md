@@ -36,7 +36,8 @@ install -D -m644 -t $target_dir VkLayer_device_filter.json
 There are two environment variables to be used to enable the layer, and subsequently filter the device names.
 
 ```bash
-VK_DEVICE_FILTER_ENABLE=1 \
+LD_LIBRARY_PATH=$HOME/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib \
+    VK_DEVICE_FILTER_ENABLE=1 \
     VK_DEVICE_FILTER=$regex \
     $command
 ```
