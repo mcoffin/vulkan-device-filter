@@ -20,6 +20,17 @@ cargo build --release
 ./install-link.sh release
 ```
 
+## Manual installation
+
+If you don't want to use the provided install script(s), you can move the target files manually.
+
+```bash
+cd vulkan-device-filter-layer
+cargo build --release
+install -D -m755 ../target/release/libvulkan_device_filter_layer.so $target_dir/libVkLayer_device_filter.so
+install -D -m644 -t $target_dir VkLayer_device_filter.json
+```
+
 # Usage
 
 There are two environment variables to be used to enable the layer, and subsequently filter the device names.
