@@ -9,7 +9,7 @@
         "description": "Device filtering layer",
         "functions": {
             "vkGetInstanceProcAddr": "DeviceFilterLayer_GetInstanceProcAddr",
-            "vkGetDeviceProcAddr": "DeviceChooserLayer_GetDeviceProcAddr"
+            "vkGetDeviceProcAddr": "DeviceFilterLayer_GetDeviceProcAddr"
         },
         "enable_environment": {
             "VK_DEVICE_FILTER_ENABLE": "1"

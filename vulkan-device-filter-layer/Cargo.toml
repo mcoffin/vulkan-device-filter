@@ -12,6 +12,7 @@ crate_type = ["dylib"]
 [dependencies]
 ash = "0.29"
 libc = "*"
+regex = "1.3"
 
 [dependencies.vulkan-sys]
 path = "../vulkan-sys"
