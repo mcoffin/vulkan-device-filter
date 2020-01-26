@@ -97,7 +97,7 @@ fn get_filter() -> Option<libc_regex_sys::Regex> {
     use libc_regex_sys::Regex;
     env::var("VK_DEVICE_FILTER")
         .ok()
-        .and_then(|ref s| Regex::new(s, 0).ok())
+        .and_then(|ref s| Regex::new(s, libc_regex_sys::sys::REG_EXTENDED as i32).ok())
 }
 
 #[link_name = "DeviceGroupFilter_EnumeratePhysicalDeviceGroups"]
