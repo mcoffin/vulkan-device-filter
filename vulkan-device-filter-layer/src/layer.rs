@@ -24,6 +24,7 @@ mod names {
     pub const DESTROY_INSTANCE: &'static [u8] = b"vkDestroyInstance\0";
     pub const ENUMERATE_DEVICE_EXTENSION_PROPERTIES: &'static [u8] = b"vkEnumerateDeviceExtensionProperties\0";
     pub const ENUMERATE_PHYSICAL_DEVICES: &'static [u8] = b"vkEnumeratePhysicalDevices\0";
+    pub const GET_PHYSICAL_DEVICE_PROPERTIES: &'static [u8] = b"vkGetPhysicalDeviceProperties\0";
 }
 
 impl DispatchTable {
@@ -36,7 +37,7 @@ impl DispatchTable {
             pfn_destroy_instance: mem::transmute(load(names::DESTROY_INSTANCE)),
             pfn_enumerate_device_extension_properties: mem::transmute(load(names::ENUMERATE_DEVICE_EXTENSION_PROPERTIES)),
             pfn_enumerate_physical_devices: mem::transmute(load(names::ENUMERATE_PHYSICAL_DEVICES)),
-            pfn_get_physical_device_properties: mem::transmute(load(b"vkGetPhysicalDeviceProperties\0")),
+            pfn_get_physical_device_properties: mem::transmute(load(names::GET_PHYSICAL_DEVICE_PROPERTIES)),
             pfn_enumerate_physical_device_groups: mem::transmute(load(b"vkEnumeratePhysicalDeviceGroups\0")),
         }
     }

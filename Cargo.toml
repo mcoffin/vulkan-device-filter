@@ -1,2 +1,2 @@
 [workspace]
-members = ["vulkan-sys", "vulkan-device-filter-layer"]
+members = ["vulkan-sys", "vulkan-device-filter-layer", "libc-regex-sys"]

@@ -1,0 +1,15 @@
+[package]
+name = "libc-regex-sys"
+version = "0.1.0"
+authors = ["Matt Coffin <mcoffin13@gmail.com>"]
+edition = "2018"
+build = "build.rs"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+libc = "*"
+
+[build-dependencies]
+bindgen = "0.52"
+pkg-config = "0.3"

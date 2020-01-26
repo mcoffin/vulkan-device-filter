@@ -82,16 +82,22 @@ impl PhysicalDeviceGroupPropertiesExt for vulkan_sys::VkPhysicalDeviceGroupPrope
     }
 }
 
-#[inline(always)]
-fn is_success_or_incomplete(v: vulkan_sys::VkResult) -> bool {
-    v == vulkan_sys::VkResult_VK_SUCCESS || v == vulkan_sys::VkResult_VK_INCOMPLETE
+trait VkResultExt {
+    fn is_success_or_incomplete(self) -> bool;
 }
 
-fn get_filter() -> Option<regex::Regex> {
-    use regex::Regex;
+impl VkResultExt for vulkan_sys::VkResult {
+    #[inline(always)]
+    fn is_success_or_incomplete(self) -> bool {
+        self == vulkan_sys::VkResult_VK_SUCCESS || self == vulkan_sys::VkResult_VK_INCOMPLETE
+    }
+}
+
+fn get_filter() -> Option<libc_regex_sys::Regex> {
+    use libc_regex_sys::Regex;
     env::var("VK_DEVICE_FILTER")
         .ok()
-        .and_then(|ref s| Regex::new(s).ok())
+        .and_then(|ref s| Regex::new(s, 0).ok())
 }
 
 #[link_name = "DeviceGroupFilter_EnumeratePhysicalDeviceGroups"]
@@ -110,7 +116,7 @@ pub unsafe extern "C" fn enumerate_physical_device_groups(
         dispatch.unwrap()
     };
     let status = dispatch.enumerate_physical_device_groups(instance, physical_device_group_count, physical_device_groups);
-    if !is_success_or_incomplete(status) {
+    if !status.is_success_or_incomplete() {
         return status;
     }
     // If devices is null, then we have to filter anyways to get the right # of potentially
@@ -123,7 +129,7 @@ pub unsafe extern "C" fn enumerate_physical_device_groups(
             .take(*physical_device_group_count as usize)
             .collect();
         let status = dispatch.enumerate_physical_device_groups(instance, physical_device_group_count, buffer.as_mut_slice().as_mut_ptr());
-        if !is_success_or_incomplete(status) {
+        if !status.is_success_or_incomplete() {
             return status;
         }
         buffer.as_mut_slice()
@@ -170,7 +176,7 @@ pub unsafe extern "C" fn enumerate_physical_devices(
         dispatch.unwrap()
     };
     let mut status = dispatch.enumerate_physical_devices(instance, physical_device_count, physical_devices);
-    if !is_success_or_incomplete(status) {
+    if !status.is_success_or_incomplete() {
         return status;
     }
 
@@ -184,7 +190,7 @@ pub unsafe extern "C" fn enumerate_physical_devices(
             .take(*physical_device_count as usize)
             .collect();
         status = dispatch.enumerate_physical_devices(instance, physical_device_count, buffer.as_mut_slice().as_mut_ptr());
-        if !is_success_or_incomplete(status) {
+        if !status.is_success_or_incomplete() {
             return status;
         }
         buffer.as_mut_slice()

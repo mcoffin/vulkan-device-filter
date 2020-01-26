@@ -11,7 +11,14 @@ crate_type = ["dylib"]
 
 [dependencies]
 libc = "*"
-regex = "1.3"
+
+[dependencies.regex]
+version = "1.3"
+default-features = false
+features = ["std"]
 
 [dependencies.vulkan-sys]
 path = "../vulkan-sys"
+
+[dependencies.libc-regex-sys]
+path = "../libc-regex-sys"
