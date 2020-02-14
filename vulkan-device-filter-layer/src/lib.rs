@@ -1,10 +1,17 @@
 pub extern crate vulkan_sys;
 extern crate libc;
 extern crate regex;
+extern crate serde;
+extern crate serde_yaml;
+extern crate log;
+extern crate env_logger;
 
 pub mod vk;
 pub mod version;
 mod layer;
+mod config;
+
+use config::Config;
 
 use std::{
     env,
@@ -15,16 +22,32 @@ use std::{
     slice
 };
 
-mod dispatches {
+pub(crate) mod dispatches {
     use std::collections::BTreeMap;
     use std::sync::{self, RwLock};
-    use super::layer;
+    use super::{
+        layer,
+        vk,
+    };
+
+    pub type ApplicationInfo = vk::ApplicationInfo<String, String>;
 
     static mut INSTANCE_DISPATCHES: Option<RwLock<BTreeMap<usize, layer::DispatchTable>>> = None;
     static mut DEVICE_DISPATCHES: Option<RwLock<BTreeMap<usize, layer::DeviceDispatchTable>>> = None;
+    static mut APPLICATION_INFOS: Option<RwLock<BTreeMap<usize, ApplicationInfo>>> = None;
 
     static INIT_I_DISPATCHES: sync::Once = sync::Once::new();
     static INIT_D_DISPATCHES: sync::Once = sync::Once::new();
+    static INIT_APPLICATION_INFOS: sync::Once = sync::Once::new();
+
+    pub fn application_infos() -> &'static RwLock<BTreeMap<usize, ApplicationInfo>> {
+        unsafe {
+            INIT_APPLICATION_INFOS.call_once(|| {
+                APPLICATION_INFOS = Some(RwLock::new(BTreeMap::new()));
+            });
+            APPLICATION_INFOS.as_ref().unwrap()
+        }
+    }
 
     pub fn instances() -> &'static RwLock<BTreeMap<usize, layer::DispatchTable>> {
         unsafe {
@@ -93,11 +116,18 @@ impl VkResultExt for vulkan_sys::VkResult {
     }
 }
 
-fn get_filter() -> Option<libc_regex_sys::Regex> {
+fn get_filter(instance: vk::Instance) -> Option<libc_regex_sys::Regex> {
+    use config::matches::InstanceMatch;
     use libc_regex_sys::Regex;
-    env::var("VK_DEVICE_FILTER")
+    let env_filter = env::var("VK_DEVICE_FILTER")
         .ok()
-        .and_then(|ref s| Regex::new(s, libc_regex_sys::sys::REG_EXTENDED as i32).ok())
+        .and_then(|ref s| Regex::new(s, libc_regex_sys::sys::REG_EXTENDED as i32).ok());
+    if env_filter.is_some() {
+        return env_filter;
+    }
+    Config::global().filters()
+        .find(|f| f.match_rule().is_match(instance))
+        .and_then(|f| Regex::new(f.filter(), libc_regex_sys::sys::REG_EXTENDED as i32).ok())
 }
 
 #[link_name = "DeviceGroupFilter_EnumeratePhysicalDeviceGroups"]
@@ -136,7 +166,7 @@ pub unsafe extern "C" fn enumerate_physical_device_groups(
     } else {
         slice::from_raw_parts_mut(physical_device_groups, *physical_device_group_count as usize)
     };
-    if let Some(filter) = get_filter() {
+    if let Some(filter) = get_filter(instance) {
         let group_matches = |group: &vulkan_sys::VkPhysicalDeviceGroupProperties| {
             let filtered_count = group.physical_devices()
                 .iter()
@@ -198,7 +228,7 @@ pub unsafe extern "C" fn enumerate_physical_devices(
         slice::from_raw_parts_mut(physical_devices, *physical_device_count as usize)
     };
 
-    if let Some(filter) = get_filter() {
+    if let Some(filter) = get_filter(instance) {
         let filtered_devices: LinkedList<vulkan_sys::VkPhysicalDevice> = devices.iter()
             .map(|&device| (device, dispatch.physical_device_properties(device)))
             .filter_map(|(device, ref properties)| if properties.get_name().to_str().as_ref().map(|s| filter.is_match(s)).unwrap_or(false) {
@@ -228,6 +258,8 @@ fn display_pfn(f: vulkan_sys::PFN_vkVoidFunction) -> String {
     }
 }
 
+static INIT_LOGGER: std::sync::Once = std::sync::Once::new();
+
 #[link_name = "DeviceFilterLayer_CreateInstance"]
 pub unsafe extern "C" fn create_instance(
     create_info: *const vk::InstanceCreateInfo,
@@ -235,6 +267,8 @@ pub unsafe extern "C" fn create_instance(
     instance: *mut vk::Instance
 ) -> vk::Result {
     use layer::DispatchTable;
+
+    INIT_LOGGER.call_once(|| env_logger::init());
 
     // println!("DeviceFilterLayer: CreateInstance");
 
@@ -280,8 +314,18 @@ pub unsafe extern "C" fn create_instance(
     }
 
     let dispatch_table = DispatchTable::load(gipa, |name| gipa.unwrap()(*instance, name.as_ptr()));
-    let mut dispatches = dispatches::instances().write().unwrap();
-    dispatches.insert((*instance).vulkan_handle_key(), dispatch_table);
+    {
+        let mut dispatches = dispatches::instances().write().unwrap();
+        dispatches.insert((*instance).vulkan_handle_key(), dispatch_table);
+    }
+    {
+        let application_info = create_info.pApplicationInfo.as_ref()
+            .map(|info| vk::ApplicationInfo::from_sys(info));
+        if let Some(application_info) = application_info {
+            let mut dispatches = dispatches::application_infos().write().unwrap();
+            dispatches.insert((*instance).vulkan_handle_key(), application_info);
+        }
+    }
 
     //println!("DeviceFilterLayer: CreateInstance: done");
 
@@ -542,7 +586,7 @@ pub unsafe extern "C" fn DeviceFilterLayer_GetInstanceProcAddr(instance: vk::Ins
         })
 }
 
-trait VulkanHandle {
+pub trait VulkanHandle {
     fn vulkan_handle_key(self) -> usize;
 }
 
