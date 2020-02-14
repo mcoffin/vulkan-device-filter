@@ -27,6 +27,8 @@ The config file path may also be overridden with the environment variable `VK_DE
 
 The following example config file forces the use of a GTX 1650 for the the game The Talos Principle, and the use of the intel iGPU for [mpv](https://mpv.io/) by matching on either the executable path, or the [VkApplicationInfo](https://www.khronos.org/registry/vulkan/specs/1.2-extensions/man/html/VkApplicationInfo.html) struct submitted by the application.
 
+Full information for the structure of this file can be cleaned from the structs in [the `config` module](https://gitlab.com/mcoffin/vulkan-device-filter/tree/master/vulkan-device-filter-layer/src/config/mod.rs).
+
 ```yaml
 filters:
   - filter: '1650'
