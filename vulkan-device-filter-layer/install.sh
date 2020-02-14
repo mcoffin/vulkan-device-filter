@@ -4,7 +4,7 @@ set -e
 set -x
 
 build_type=${1:-release}
-target_dir=~/.local/share/vulkan/implicit_layer.d
+target_dir=~/.local/share/vulkan/explicit_layer.d
 
 if [ ! -d $target_dir ]; then
 	mkdir -p $target_dir

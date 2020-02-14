@@ -63,7 +63,7 @@ For advanced information for custom setups, see [the vulkan docs on layers](http
 
 ## Installation with scripts
 
-To install as an implicit layer by copying the target files
+To install as an explicit layer by copying the target files
 
 ```
 cd vulkan-device-filter-layer
@@ -71,7 +71,7 @@ cargo build --release
 ./install.sh
 ```
 
-To install as an implicit layer, you can use symlinks via the provided script.
+To install as an explicit layer, you can use symlinks via the provided script.
 
 ```
 cd vulkan-device-filter-layer
@@ -84,8 +84,9 @@ cargo build --release
 If you don't want to use the provided install script(s), you can move the target files manually.
 
 ```bash
+target_dir=${target_dir:-~/.local/share/vulkan/explicit_layer.d}
 cd vulkan-device-filter-layer
 cargo build --release
-install -D -m755 ../target/release/libvulkan_device_filter_layer.so $target_dir/libVkLayer_device_filter.so
+install -D -m755 -t "$target_dir" ../target/release/libvulkan_device_filter_layer.so
 install -D -m644 -t $target_dir VkLayer_device_filter.json
 ```
