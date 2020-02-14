@@ -1,0 +1,21 @@
+stages:
+  - build
+build:
+  stage: build
+  image: rust:1-stretch
+  only:
+    - master
+    - merge_requests
+  variables:
+    RUSTFLAGS: -C target-cpu=native -C relocation-model=pic
+  before_script:
+    - apt-get update -y
+    - apt-get install libvulkan{1,-dev} vulkan-utils clang pkg-config -y
+  script:
+    - cargo build --release
+    - cargo test --release
+  artifacts:
+    paths:
+      - vulkan-device-filter-layer/*.json
+      - target/release/libvulkan_device_filter_layer.so
+    expire_in: '7 days'
