@@ -43,6 +43,8 @@ if [ -z "$build_type" ]; then
 	build_type="$(get_build_type)"
 fi
 
+[ -d $target_dir ] || mkdir -p $target_dir
+
 pushd $target_dir
 for f in VkLayer_device_filter.json libVkLayer_device_filter.so; do
 	if [ -a "$f" ]; then

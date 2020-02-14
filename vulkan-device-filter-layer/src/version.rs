@@ -1,3 +1,5 @@
+use std::fmt;
+
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub struct VulkanSemanticVersion(u32);
 
@@ -67,5 +69,16 @@ impl SemanticVersion for VulkanSemanticVersion {
     #[inline(always)]
     fn patch(&self) -> u32 {
         self.0 & 0xfff
+    }
+}
+
+impl fmt::Display for VulkanSemanticVersion {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}.{}.{}", self.major(), self.minor(), self.patch())
+    }
+}
+impl fmt::Debug for VulkanSemanticVersion {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "VulkanSemanticVersion({}.{}.{})", self.major(), self.minor(), self.patch())
     }
 }
