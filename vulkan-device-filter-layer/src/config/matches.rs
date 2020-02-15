@@ -70,6 +70,13 @@ pub trait InstanceMatch {
 
 impl InstanceMatch for MatchRule {
     fn is_match(&self, instance: sys::VkInstance) -> bool {
+        use libc_regex_sys::{
+            RegcompFlags,
+            RegcompFlagsBuilder,
+        };
+        let regex_flags: RegcompFlags = RegcompFlagsBuilder::default()
+            .extended(true)
+            .into();
         match self {
             MatchRule::Executable { name } => {
                 use libc_regex_sys::Regex;
@@ -80,7 +87,7 @@ impl InstanceMatch for MatchRule {
                     .as_ref()
                     .and_then(|p| p.to_str())
                     .and_then(|p| {
-                        Regex::new(&*name, libc_regex_sys::sys::REG_EXTENDED as i32)
+                        Regex::new(&*name, regex_flags)
                             .err_side_effect(|e| warn!("Invalid regex in config: {:?}", name))
                             .ok()
                             .map(|pattern| pattern.is_match(p))
@@ -126,9 +133,12 @@ impl InstanceMatch for MatchRule {
     }
 }
 fn maybe_pattern<S: AsRef<str>>(s: S) -> Option<libc_regex_sys::Regex> {
-    use libc_regex_sys::Regex;
+    use libc_regex_sys::{
+        Regex,
+        RegcompFlagsBuilder,
+    };
     let s = s.as_ref();
-    Regex::new(s, libc_regex_sys::sys::REG_EXTENDED as i32)
+    Regex::new(s, RegcompFlagsBuilder::default().extended(true).into())
         .err_side_effect(|e| warn!("Invalid regex in config: {:?}", e))
         .ok()
 }

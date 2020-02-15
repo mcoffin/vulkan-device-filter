@@ -10,6 +10,7 @@ fn main() {
         .whitelist_type("regex_t")
         .whitelist_function("regcomp")
         .whitelist_function("regexec")
+        .whitelist_function("regfree")
         .whitelist_var("REG_EXTENDED")
         .generate()
         .expect("Error generating bindings for regex");

@@ -1,18 +1,19 @@
 [package]
-name = "libc-regex-sys"
+name = "flag-builder"
 version = "0.1.0"
 authors = ["Matt Coffin <mcoffin13@gmail.com>"]
 edition = "2018"
-build = "build.rs"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[lib]
+proc-macro = true
+
 [dependencies]
-libc = "*"
+quote = "1.0"
+proc-macro2 = "1.0"
+Inflector = "0.11"
 
-[dependencies.flag-builder]
-path = "../flag-builder"
-
-[build-dependencies]
-bindgen = "0.52"
-pkg-config = "0.3"
+[dependencies.syn]
+version = "1.0"
+features = ["full"]

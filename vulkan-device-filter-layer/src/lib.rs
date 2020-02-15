@@ -118,16 +118,23 @@ impl VkResultExt for vulkan_sys::VkResult {
 
 fn get_filter(instance: vk::Instance) -> Option<libc_regex_sys::Regex> {
     use config::matches::InstanceMatch;
-    use libc_regex_sys::Regex;
+    use libc_regex_sys::{
+        Regex,
+        RegcompFlags,
+        RegcompFlagsBuilder
+    };
+    let regex_flags: RegcompFlags = RegcompFlagsBuilder::default()
+        .extended(true)
+        .into();
     let env_filter = env::var("VK_DEVICE_FILTER")
         .ok()
-        .and_then(|ref s| Regex::new(s, libc_regex_sys::sys::REG_EXTENDED as i32).ok());
+        .and_then(|ref s| Regex::new(s, regex_flags).ok());
     if env_filter.is_some() {
         return env_filter;
     }
     Config::global().filters()
         .find(|f| f.match_rule().is_match(instance))
-        .and_then(|f| Regex::new(f.filter(), libc_regex_sys::sys::REG_EXTENDED as i32).ok())
+        .and_then(|f| Regex::new(f.filter(), regex_flags).ok())
 }
 
 #[link_name = "DeviceGroupFilter_EnumeratePhysicalDeviceGroups"]
