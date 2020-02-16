@@ -8,7 +8,7 @@ pub use sys::VkLayerInstanceCreateInfo as LayerInstanceCreateInfo;
 pub use sys::VkStructureType as StructureType;
 
 use std::marker;
-use crate::version::VulkanSemanticVersion;
+pub use crate::version::VulkanSemanticVersion;
 
 #[repr(C)]
 pub struct VkStructHead {

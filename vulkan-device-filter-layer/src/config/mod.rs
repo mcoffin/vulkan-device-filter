@@ -20,6 +20,9 @@ pub enum MatchRule {
     AppInfo {
         name: Option<String>,
         engine: Option<String>,
+        app_version: Option<String>,
+        engine_version: Option<String>,
+        api_version: Option<String>,
     },
     And {
         rules: Vec<Box<MatchRule>>

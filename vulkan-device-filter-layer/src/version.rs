@@ -26,6 +26,15 @@ impl VulkanSemanticVersion {
     pub fn into_raw(self) -> u32 {
         self.into()
     }
+
+    #[inline(always)]
+    pub fn as_opt(self) -> Option<Self> {
+        if self.0 == 0 {
+            None
+        } else {
+            Some(self)
+        }
+    }
 }
 
 impl Into<u32> for VulkanSemanticVersion {

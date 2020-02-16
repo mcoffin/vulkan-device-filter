@@ -422,7 +422,14 @@ pub unsafe extern "C" fn enumerate_instance_layer_properties(
     if !properties.is_null() {
         let properties = properties.as_mut().unwrap();
 
-        libc::strcpy(properties.layerName.as_ptr() as *mut libc::c_char, CStr::from_bytes_with_nul_unchecked(b"VK_LAYER_MCOF_device_filter\0").as_ptr());
+        #[cfg(target_arch = "x86")]
+        {
+            libc::strcpy(properties.layerName.as_ptr() as *mut libc::c_char, CStr::from_bytes_with_nul_unchecked(b"VK_LAYER_MCOF_device_filter_32\0").as_ptr());
+        }
+        #[cfg(not(target_arch = "x86"))]
+        {
+            libc::strcpy(properties.layerName.as_ptr() as *mut libc::c_char, CStr::from_bytes_with_nul_unchecked(b"VK_LAYER_MCOF_device_filter\0").as_ptr());
+        }
         libc::strcpy(properties.description.as_ptr() as *mut libc::c_char, CStr::from_bytes_with_nul_unchecked(b"Device filter layer\0").as_ptr());
 
         properties.implementationVersion = 1;
@@ -441,6 +448,10 @@ pub unsafe extern "C" fn enumerate_device_layer_properties(
     enumerate_instance_layer_properties(property_count, properties)
 }
 
+fn is_device_filter_layer(n: &str) -> bool {
+    n != "VK_LAYER_MCOF_device_filter" && n != "VK_LAYER_MCOF_device_filter_32"
+}
+
 #[link_name = "DeviceFilterLayer_EnumerateDeviceExtensionProperties"]
 pub unsafe extern "C" fn enumerate_device_extension_properties(
     physical_device: vulkan_sys::VkPhysicalDevice,
@@ -454,7 +465,7 @@ pub unsafe extern "C" fn enumerate_device_extension_properties(
         Some(ffi::CStr::from_ptr(layer_name_orig))
     };
     let layer_name = layer_name.map(|s| s.to_str().expect("Invalid UTF8 layer name"));
-    if layer_name.is_none() || layer_name.filter(|&n| n != "VK_LAYER_MCOF_device_filter").is_some() {
+    if layer_name.is_none() || layer_name.filter(|&n| is_device_filter_layer(n)).is_some() {
         let physical_device_handle: usize = mem::transmute(physical_device);
         if physical_device_handle == 0 {
             return vulkan_sys::VkResult_VK_SUCCESS;
@@ -481,7 +492,7 @@ pub unsafe extern "C" fn enumerate_instance_extension_properties(
         Some(ffi::CStr::from_ptr(layer_name))
     };
     let layer_name = layer_name.map(|s| s.to_str().expect("Invalid UTF8 layer name"));
-    if layer_name.is_none() || layer_name.filter(|&n| n != "VK_LAYER_MCOF_device_filter").is_some() {
+    if layer_name.is_none() || layer_name.filter(|&n| is_device_filter_layer(n)).is_some() {
         return vulkan_sys::VkResult_VK_ERROR_LAYER_NOT_PRESENT;
     }
     if !property_count.is_null() {
