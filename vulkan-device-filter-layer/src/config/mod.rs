@@ -7,7 +7,10 @@ use std::{
     fs,
     io,
     sync,
-    path::Path,
+    path::{
+        Path,
+        PathBuf,
+    },
 };
 
 pub mod matches;
@@ -63,6 +66,45 @@ where
     fs::OpenOptions::new()
         .read(true)
         .open(path)
+}
+
+pub fn open_config_first<P>(name: P) -> Option<PathBuf>
+where
+    P: AsRef<Path>,
+{
+    use std::env;
+    let name = name.as_ref();
+    env::var("VK_DEVICE_FILTER_CONFIG").ok()
+        .map(PathBuf::from)
+        .map(|mut path| {
+            path.pop();
+            path.push(name);
+            path
+        })
+        .and_then(|path| open_config(&path).ok().map(move |_| path))
+        .or_else(|| {
+            dirs::config_dir()
+                .map(|mut config_dir| {
+                    config_dir.push("vulkan-device-filter");
+                    config_dir.push(name);
+                    config_dir
+                })
+                .and_then(|path| open_config(&path).ok().map(move |_| path))
+        })
+        .or_else(|| {
+            let search_paths = [
+                "/etc/vulkan-device-filter",
+                "/usr/share/vulkan/device-filter"
+            ];
+            search_paths.iter()
+                .map(PathBuf::from)
+                .map(|mut p| {
+                    p.push(name);
+                    p
+                })
+                .filter_map(|path| open_config(&path).ok().map(move |_| path))
+                .next()
+        })
 }
 
 static INIT_CONFIG: sync::Once = sync::Once::new();

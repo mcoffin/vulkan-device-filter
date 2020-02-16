@@ -5,6 +5,7 @@ extern crate serde;
 extern crate serde_yaml;
 extern crate log;
 extern crate env_logger;
+extern crate log4rs;
 
 pub mod vk;
 pub mod version;
@@ -267,6 +268,34 @@ fn display_pfn(f: vulkan_sys::PFN_vkVoidFunction) -> String {
 
 static INIT_LOGGER: std::sync::Once = std::sync::Once::new();
 
+#[cfg(not(feature = "no_log"))]
+fn init_logger() {
+    use std::io::{
+        self,
+        Write,
+    };
+    println!("initializing logging");
+    if let Some(path) = config::open_config_first("log4rs.yml") {
+        if let Err(e) = log4rs::init_file(path, Default::default()) {
+            let stderr = io::stderr();
+            let mut stderr = stderr.lock();
+            let _ = writeln!(&mut stderr, "Could not init log4rs, defaulting to using env_logger: {:?}", e);
+        } else {
+            return;
+        }
+    }
+    #[cfg(debug_assertions)]
+    {
+        let stderr = io::stderr();
+        let mut stderr = stderr.lock();
+        let _ = writeln!(&mut stderr, "Could not find log4rs config file, defaulting to using env_logger");
+    }
+    env_logger::init();
+}
+
+#[cfg(feature = "no_log")]
+fn init_logger() {}
+
 #[link_name = "DeviceFilterLayer_CreateInstance"]
 pub unsafe extern "C" fn create_instance(
     create_info: *const vk::InstanceCreateInfo,
@@ -275,7 +304,7 @@ pub unsafe extern "C" fn create_instance(
 ) -> vk::Result {
     use layer::DispatchTable;
 
-    INIT_LOGGER.call_once(|| env_logger::init());
+    INIT_LOGGER.call_once(|| init_logger());
 
     // println!("DeviceFilterLayer: CreateInstance");
 
