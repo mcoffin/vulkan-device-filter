@@ -575,7 +575,7 @@ mod lookup {
                 let f: vulkan_sys::PFN_vkEnumeratePhysicalDevices = Some(enumerate_physical_devices);
                 i_map.insert("vkEnumeratePhysicalDevices", mem::transmute(f));
                 let f: vulkan_sys::PFN_vkEnumeratePhysicalDeviceGroups = Some(enumerate_physical_device_groups);
-                ["vkEnumeratePhysicalDeviceGroups", "vkEnumeratePhysicalDeviceGroupsKHR"].into_iter().for_each(|k| {
+                ["vkEnumeratePhysicalDeviceGroups", "vkEnumeratePhysicalDeviceGroupsKHR"].iter().for_each(|k| {
                     i_map.insert(k, mem::transmute(f));
                 });
                 let f: vulkan_sys::PFN_vkCreateDevice = Some(create_device);

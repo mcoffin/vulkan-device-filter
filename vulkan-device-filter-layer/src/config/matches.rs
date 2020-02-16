@@ -8,10 +8,6 @@ use log::{
 };
 use std::{
     env,
-    io::{
-        self,
-        Write,
-    },
 };
 use crate::vk;
 
@@ -89,7 +85,7 @@ impl InstanceMatch for MatchRule {
                     .and_then(|p| p.to_str())
                     .and_then(|p| {
                         Regex::new(&*name, regex_flags)
-                            .err_side_effect(|e| warn!("Invalid regex in config: {:?}", name))
+                            .err_side_effect(|e| warn!("Invalid regex in config: {:?}", e))
                             .ok()
                             .map(|pattern| pattern.is_match(p))
                     })
@@ -100,7 +96,6 @@ impl InstanceMatch for MatchRule {
                     dispatches,
                     VulkanHandle,
                 };
-                use libc_regex_sys::Regex;
                 let application_infos = dispatches::application_infos().read().unwrap();
                 if let Some(application_info) = application_infos.get(&instance.vulkan_handle_key()) {
                     debug!("application info: {:?}", application_info);

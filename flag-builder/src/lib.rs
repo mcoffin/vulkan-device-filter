@@ -52,7 +52,6 @@ pub fn flag_builder(attribute: TokenStream, item: TokenStream) -> TokenStream {
             let snake = variant_ident_s.to_snake_case();
             let get_ident = syn::Ident::new(snake.as_str(), variant.ident.span());
             let set_ident = syn::Ident::new(format!("set_{}", &snake).as_str(), variant.ident.span());
-            let struct_ident = &args.real_name;
             let enum_ident = &enum_input.ident.clone();
             let variant_ident = &variant.ident.clone();
             let repr_type_ident = &args.repr_type;
