@@ -16,10 +16,7 @@ dirs = "2.0"
 env_logger = "0.7"
 lazy_static = "1.4"
 log4rs = "0.10"
-
-[dependencies.log]
-version = "0.4"
-features = ["release_max_level_warn"]
+log = "0.4"
 
 [dependencies.regex]
 version = "1.3"
@@ -37,5 +34,6 @@ path = "../vulkan-sys"
 path = "../libc-regex-sys"
 
 [features]
-default = []
+default = ["release_only_warn"]
+release_only_warn = ["log/release_max_level_warn"]
 no_log = []
