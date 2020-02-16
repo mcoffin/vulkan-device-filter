@@ -15,6 +15,7 @@ serde_yaml = "0.8"
 dirs = "2.0"
 env_logger = "0.7"
 log = "0.4"
+lazy_static = "1.4"
 
 [dependencies.regex]
 version = "1.3"

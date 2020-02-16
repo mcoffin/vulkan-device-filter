@@ -544,17 +544,13 @@ pub unsafe extern "C" fn DeviceFilterLayer_GetDeviceProcAddr(device: vulkan_sys:
 
 mod lookup {
     use std::collections::BTreeMap;
-    use std::sync::Once;
     use std::mem;
     use super::*;
+    use lazy_static::lazy_static;
 
-    static mut INSTANCE_LOOKUP: Option<BTreeMap<&'static str, vulkan_sys::PFN_vkVoidFunction>> = None;
-
-    static INIT: Once = Once::new();
-
-    pub fn instance() -> &'static BTreeMap<&'static str, vulkan_sys::PFN_vkVoidFunction> {
-        unsafe {
-            INIT.call_once(|| {
+    lazy_static! {
+        static ref INSTANCE_LOOKUP: BTreeMap<&'static str, vulkan_sys::PFN_vkVoidFunction> = {
+            unsafe {
                 let mut i_map = BTreeMap::new();
                 let f: vulkan_sys::PFN_vkGetInstanceProcAddr = Some(DeviceFilterLayer_GetInstanceProcAddr);
                 i_map.insert("vkGetInstanceProcAddr", mem::transmute(f));
@@ -582,11 +578,13 @@ mod lookup {
                 i_map.insert("vkCreateDevice", mem::transmute(f));
                 let f: vulkan_sys::PFN_vkDestroyDevice = Some(destroy_device);
                 i_map.insert("vkDestroyDevice", mem::transmute(f));
+                i_map
+            }
+        };
+    }
 
-                INSTANCE_LOOKUP = Some(i_map);
-            });
-            INSTANCE_LOOKUP.as_ref().unwrap()
-        }
+    pub fn instance() -> &'static BTreeMap<&'static str, vulkan_sys::PFN_vkVoidFunction> {
+        &INSTANCE_LOOKUP
     }
 }
 
