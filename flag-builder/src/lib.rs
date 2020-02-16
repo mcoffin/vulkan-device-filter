@@ -80,6 +80,7 @@ pub fn flag_builder(attribute: TokenStream, item: TokenStream) -> TokenStream {
             (real_fns, builder_fns)
         })
         .collect();
+    let enum_ident = &enum_input.ident;
     let real_ident = &args.real_name;
     let repr_type = &args.repr_type;
     let builder_ident = &args.builder_ident();
@@ -95,6 +96,21 @@ pub fn flag_builder(attribute: TokenStream, item: TokenStream) -> TokenStream {
 
         impl #real_ident {
             #(#real_fns)*
+
+            #[inline]
+            pub fn set(&mut self, flag: #enum_ident, v: bool) {
+                if v {
+                    self.0 |= flag as #repr_type;
+                } else {
+                    let mask = (flag as #repr_type) ^ #repr_type::max_value();
+                    self.0 &= mask;
+                }
+            }
+
+            #[inline]
+            pub fn get(&self, flag: #enum_ident) -> bool {
+                (self.0 & (flag as #repr_type)) != 0
+            }
         }
 
         impl Into<#repr_type> for #real_ident {
@@ -109,6 +125,17 @@ pub fn flag_builder(attribute: TokenStream, item: TokenStream) -> TokenStream {
 
         impl #builder_ident {
             #(#builder_fns)*
+
+            #[inline]
+            pub fn set(self, flag: #enum_ident, v: bool) -> Self {
+                if v {
+                    let mask = flag as #repr_type;
+                    #builder_ident(self.0 | mask)
+                } else {
+                    let mask = (flag as #repr_type) ^ #repr_type::max_value();
+                    #builder_ident(self.0 & mask)
+                }
+            }
         }
 
         impl Into<#real_ident> for #builder_ident {
@@ -126,6 +153,7 @@ pub fn flag_builder(attribute: TokenStream, item: TokenStream) -> TokenStream {
         }
 
         impl Into<#repr_type> for #builder_ident {
+            #[inline]
             fn into(self) -> #repr_type {
                 let v: #real_ident = self.into();
                 v.into()
